@@ -7,13 +7,10 @@ import {
     TextField,
     Typography,
 } from '@mui/material';
-import {useTheme} from '@mui/material/styles';
 import {Box} from '@mui/system';
-import {useFormik} from 'formik';
 import {useRouter} from 'next/router';
 import {useSelector} from 'react-redux';
 import {toast} from 'react-toastify';
-import * as Yup from 'yup';
 
 import useAppDispatch from '@/hooks/useAppDispatch';
 import {LogIn as LogInType} from '@/interfaces';
@@ -25,24 +22,43 @@ import ShowAndHidePassword from './components/ShowAndHidePassword';
 const LogIn = () => {
     const router = useRouter();
     const dispatch = useAppDispatch();
+    const [isPasswordVisible, setIsPasswordVisible] = useState(false);
+    const isRedirectingRef = useRef(false);
+
+    // Форма состояния без formik
+    const [formData, setFormData] = useState({
+        email: '',
+        password: '',
+    });
+
+    const [errors, setErrors] = useState({
+        email: '',
+        password: '',
+    });
+
+    const [touched, setTouched] = useState({
+        email: false,
+        password: false,
+    });
+
     const {isLoading, isFail, isSuccess, message} = useSelector(
         (state: RootState) => state.auth.login
     );
-    const [toggle, setToggle] = useState('email');
-    const theme = useTheme();
-    const [isPasswordVisible, setIsPasswordVisible] = useState(false);
-    const isRedirectingRef = useRef(false);
-    const navigationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-    const navigationFrameRef = useRef<number | null>(null);
 
     useEffect(() => {
         if (isFail) {
-            toast.error(message);
+            toast.error(message || 'Login failed');
             dispatch(clean());
         }
     }, [isFail, message, dispatch]);
 
-    // Обработка успешного входа - навигация после получения данных пользователя
+    // Сброс флага редиректа при размонтировании компонента
+    useEffect(() => {
+        return () => {
+            isRedirectingRef.current = false;
+        };
+    }, []);
+
     useEffect(() => {
         if (isSuccess && !isRedirectingRef.current) {
             isRedirectingRef.current = true;
@@ -55,17 +71,9 @@ const LogIn = () => {
                     
                     await dispatch(getCurrentUser()).unwrap();
                     
-                    toast.success('Login successful!');
-                    
-                    // Используем requestAnimationFrame и setTimeout для отложенной навигации
-                    // Это предотвращает ошибки removeChild при размонтировании компонентов
-                    navigationFrameRef.current = requestAnimationFrame(() => {
-                        navigationTimeoutRef.current = setTimeout(() => {
-                            // Используем window.location.href для полной перезагрузки страницы
-                            // Это полностью очищает состояние React и предотвращает ошибки DOM
-                            window.location.href = '/';
-                        }, 100); // Задержка 100ms для гарантии завершения всех обновлений
-                    });
+                    // Используем немедленную навигацию через window.location.href
+                    // Это полностью перезагружает страницу и предотвращает любые конфликты с React DOM
+                    window.location.href = '/';
                 } catch (error) {
                     console.error('Failed to load user:', error);
                     isRedirectingRef.current = false; // Сбрасываем флаг при ошибке
@@ -73,43 +81,81 @@ const LogIn = () => {
             };
             
             loadUserAndRedirect();
-            
-            // Cleanup функция для предотвращения навигации, если компонент размонтирован
-            return () => {
-                if (navigationFrameRef.current !== null) {
-                    cancelAnimationFrame(navigationFrameRef.current);
-                    navigationFrameRef.current = null;
-                }
-                if (navigationTimeoutRef.current) {
-                    clearTimeout(navigationTimeoutRef.current);
-                    navigationTimeoutRef.current = null;
-                }
-            };
         }
     }, [isSuccess, dispatch]);
 
-    const formik = useFormik({
-        initialValues: {
-            email: '',
-            password: '',
-        },
-        validationSchema: Yup.object({
-            email: Yup.string().email('Invalid email').required('Email is required'),
-            password: Yup.string()
-                .required('Password is required')
-                .min(6, 'Minimum 6 characters'), 
-        }),
-        onSubmit: async (values: LogInType) => {
+    // Валидация полей
+    const validateField = (name: string, value: string): string => {
+        switch (name) {
+            case 'email':
+                if (!value) return 'Email is required';
+                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                if (!emailRegex.test(value)) return 'Invalid email';
+                return '';
+            case 'password':
+                if (!value) return 'Password is required';
+                if (value.length < 6) return 'Minimum 6 characters';
+                return '';
+            default:
+                return '';
+        }
+    };
+
+    // Обработчик изменения полей
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const {name, value} = e.target;
+        setFormData(prev => ({...prev, [name]: value}));
+        
+        // Валидация при изменении, если поле было затронуто
+        if (touched[name as keyof typeof touched]) {
+            const error = validateField(name, value);
+            setErrors(prev => ({...prev, [name]: error}));
+        }
+    };
+
+    // Обработчик blur (когда поле теряет фокус)
+    const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+        const {name, value} = e.target;
+        setTouched(prev => ({...prev, [name]: true}));
+        const error = validateField(name, value);
+        setErrors(prev => ({...prev, [name]: error}));
+    };
+
+    // Обработчик отправки формы
+    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        
+        // Помечаем все поля как затронутые
+        const allTouched = {
+            email: true,
+            password: true,
+        };
+        setTouched(allTouched);
+
+        // Валидация всех полей
+        const newErrors = {
+            email: validateField('email', formData.email),
+            password: validateField('password', formData.password),
+        };
+        setErrors(newErrors);
+
+        // Проверяем, есть ли ошибки
+        const hasErrors = Object.values(newErrors).some(error => error !== '');
+        
+        if (!hasErrors) {
+            // Отправляем данные на вход
             try {
-                const result = await dispatch(login(values)).unwrap();
-                console.log('Login successful:', result);
-                formik.resetForm();
+                await dispatch(login(formData as LogInType)).unwrap();
             } catch (error) {
                 console.error('Login failed:', error);
-                toast.error('Login failed!');
             }
-        },
-    });
+        }
+    };
+
+    // Если вход успешен, не рендерим форму
+    if (isSuccess) {
+        return null;
+    }
 
     return (
         <Paper
@@ -187,7 +233,7 @@ const LogIn = () => {
             {/*  </Box>*/}
             {/*</Box>*/}
 
-            <form onSubmit={formik.handleSubmit}>
+            <form onSubmit={handleSubmit}>
                 <Box
                     sx={{
                         maxWidth: 300,
@@ -205,11 +251,11 @@ const LogIn = () => {
                         margin="dense"
                         type="email"
                         name="email"
-                        value={formik.values.email}
-                        onChange={formik.handleChange}
-                        onBlur={formik.handleBlur}
-                        error={formik.touched.email && Boolean(formik.errors.email)}
-                        helperText={formik.touched.email ? formik.errors.email : undefined}
+                        value={formData.email}
+                        onChange={handleChange}
+                        onBlur={handleBlur}
+                        error={touched.email && Boolean(errors.email)}
+                        helperText={touched.email ? errors.email : undefined}
                     />
 
                     <Box
@@ -221,20 +267,18 @@ const LogIn = () => {
                             sx={{
                                 width: '100%',
                             }}
-                            placeholder={'Passowrd'}
+                            placeholder={'Password'}
                             fullWidth
                             variant="outlined"
                             required
                             margin="dense"
                             type={isPasswordVisible ? 'text' : 'password'}
                             name="password"
-                            value={formik.values.password}
-                            onChange={formik.handleChange}
-                            onBlur={formik.handleBlur}
-                            error={formik.touched.password && Boolean(formik.errors.password)}
-                            helperText={
-                                formik.touched.password ? formik.errors.password : undefined
-                            }
+                            value={formData.password}
+                            onChange={handleChange}
+                            onBlur={handleBlur}
+                            error={touched.password && Boolean(errors.password)}
+                            helperText={touched.password ? errors.password : undefined}
                         />
                         <ShowAndHidePassword
                             isVisible={isPasswordVisible}
