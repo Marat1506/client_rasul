@@ -1,5 +1,5 @@
-import dynamic from 'next/dynamic';
 import { Box, Typography } from '@mui/material';
+import dynamic from 'next/dynamic';
 
 // Disable SSR for chat page to avoid hydration issues
 const ChatPageContent = dynamic(() => import('@/components/Chat/ChatPageContent'), {

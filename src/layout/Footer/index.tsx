@@ -1,9 +1,10 @@
+import { useEffect, useState } from 'react';
+
 import { Typography } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import useMediaQuery from '@mui/material/useMediaQuery';
-import { Box } from '@mui/system';
-import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
+import { Box } from '@mui/system';
 
 import { ResponsiveImage } from '@/components/UI/ResponsiveImage';
 

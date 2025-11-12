@@ -1,9 +1,9 @@
 import {configureStore} from '@reduxjs/toolkit';
 
 import auth from './reducers/auth';
+import chat from './reducers/chat';
 import contents from './reducers/contents';
 import pages from './reducers/pages';
-import chat from './reducers/chat';
 
 export const store = configureStore({
     reducer: {

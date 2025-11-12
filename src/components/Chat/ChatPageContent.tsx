@@ -8,11 +8,11 @@ import useMediaQuery from '@mui/material/useMediaQuery';
 import { useRouter } from 'next/router';
 import { useSelector } from 'react-redux';
 
+import { getCookie } from '@/hooks/cookies';
+import { useChat } from '@/hooks/useChat';
 import Chat from '@/components/Chat';
 import Conversations from '@/components/Chat/Conversations';
 import CreateChat from '@/components/Chat/CreateChat';
-import { useChat } from '@/hooks/useChat';
-import { getCookie } from '@/hooks/cookies';
 import { RootState } from '@/redux';
 
 const ChatPageContent = () => {

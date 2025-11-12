@@ -4,8 +4,6 @@ import { useRouter } from 'next/router';
 import { useSelector, useDispatch } from 'react-redux';
 
 import { RootState } from '@/redux';
-import { useSocket } from './useSocket';
-import { getCookie } from './cookies';
 import {
     createConversation,
     getMyConversations,
@@ -16,6 +14,9 @@ import {
     markAsRead,
 } from '@/redux/actions/chat';
 import { setCurrentConversation, addMessage } from '@/redux/reducers/chat';
+
+import { getCookie } from './cookies';
+import { useSocket } from './useSocket';
 
 const ChatsContext = createContext({
     chatList: [] as any[],

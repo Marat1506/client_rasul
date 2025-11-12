@@ -4,8 +4,8 @@ import { useRouter } from 'next/router';
 import { Provider } from 'react-redux';
 import { Bounce, ToastContainer } from 'react-toastify';
 
-import { ChatsProvider } from '@/hooks/useChat';
 import { useAuth } from '@/hooks/useAuth';
+import { ChatsProvider } from '@/hooks/useChat';
 import Layout from '@/layout';
 import AdminLayout from '@/layout/AdminLayout';
 import { store } from '@/redux';

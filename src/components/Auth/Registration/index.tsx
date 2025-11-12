@@ -8,32 +8,47 @@ import {
     TextField,
     Typography,
 } from '@mui/material';
-import {useTheme} from '@mui/material/styles';
 import {Box} from '@mui/system';
-import {useFormik} from 'formik';
 import {useRouter} from 'next/router';
 import {useSelector} from 'react-redux';
 import {toast} from 'react-toastify';
-import * as Yup from 'yup';
- 
+
 import useAppDispatch from '@/hooks/useAppDispatch';
 import {Register} from '@/interfaces';
 import {RootState} from '@/redux';
 import {clean, register} from '@/redux/actions/auth';
-
 
 import ShowAndHidePassword from '../LogIn/components/ShowAndHidePassword';
 
 const Registration = () => {
     const router = useRouter();
     const dispatch = useAppDispatch();
-    const [currentStep, setCurrentStep] = useState(1);
-    const [toggle, setToggle] = useState('email');
     const [isPasswordVisible, setIsPasswordVisible] = useState(false);
     const isRedirectingRef = useRef(false);
 
-    const theme = useTheme();
-    const {isLoading, isFail, isSuccess, message, data} = useSelector(
+    // Форма состояния без formik
+    const [formData, setFormData] = useState({
+        first_name: '',
+        last_name: '',
+        email: '',
+        password: '',
+    });
+
+    const [errors, setErrors] = useState({
+        first_name: '',
+        last_name: '',
+        email: '',
+        password: '',
+    });
+
+    const [touched, setTouched] = useState({
+        first_name: false,
+        last_name: false,
+        email: false,
+        password: false,
+    });
+
+    const {isLoading, isFail, isSuccess, message} = useSelector(
         (state: RootState) => state.auth.register
     );
 
@@ -44,78 +59,102 @@ const Registration = () => {
         }
     }, [isFail, message, dispatch]);
 
+    // Сброс флага редиректа при размонтировании компонента
+    useEffect(() => {
+        return () => {
+            isRedirectingRef.current = false;
+        };
+    }, []);
+
     useEffect(() => {
         if (isSuccess && !isRedirectingRef.current) {
             isRedirectingRef.current = true;
-            
-            // Используем requestAnimationFrame для синхронизации с циклом рендеринга браузера
-            // Это гарантирует, что React завершит все операции перед навигацией
-            let timeoutId: NodeJS.Timeout | null = null;
-            let cancelled = false;
-            
-            const frameId = requestAnimationFrame(() => {
-                if (cancelled) return;
-                
-                // Используем небольшой setTimeout для гарантии завершения всех обновлений
-                timeoutId = setTimeout(() => {
-                    if (!cancelled) {
-                        // Используем window.location.href для полной перезагрузки страницы
-                        // Это полностью очищает состояние React и предотвращает ошибки DOM
-                        window.location.href = '/auth/login';
-                    }
-                }, 100); // Задержка 100ms для гарантии завершения всех обновлений
-            });
-            
-            // Cleanup функция для предотвращения навигации, если компонент размонтирован
-            return () => {
-                cancelled = true;
-                cancelAnimationFrame(frameId);
-                if (timeoutId) {
-                    clearTimeout(timeoutId);
-                }
-            };
+            // Используем немедленную навигацию через window.location.href
+            // Это полностью перезагружает страницу и предотвращает любые конфликты с React DOM
+            window.location.href = '/auth/login';
         }
     }, [isSuccess]);
 
-    // STEPS
-    // useEffect(() => {
-    //     const urlParams = new URLSearchParams(window.location.search);
-    //     const step = urlParams.get('step');
-    //
-    //     if (!step) {
-    //         router.push({
-    //             pathname: router.pathname,
-    //             query: {...router.query, step: 1}
-    //         });
-    //     }
-    //
-    //     if (step) setCurrentStep(Number(step));
-    //
-    // }, [router]);
+    // Валидация полей
+    const validateField = (name: string, value: string): string => {
+        switch (name) {
+            case 'first_name':
+                if (!value) return 'First name is required';
+                if (value.length < 2) return 'Minimum 2 characters';
+                return '';
+            case 'last_name':
+                if (!value) return 'Last name is required';
+                if (value.length < 2) return 'Minimum 2 characters';
+                return '';
+            case 'email':
+                if (!value) return 'Email is required';
+                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                if (!emailRegex.test(value)) return 'Invalid email';
+                return '';
+            case 'password':
+                if (!value) return 'Password is required';
+                if (value.length < 6) return 'Minimum 6 characters';
+                return '';
+            default:
+                return '';
+        }
+    };
 
-    const formik = useFormik({
-        initialValues: {
-            first_name: '',
-            last_name: '',
-            email: '',
-            password: '',
-        },
-        validationSchema: Yup.object({
-            first_name: Yup.string()
-                .required('First name is required')
-                .min(2, 'Minimum 2 characters'),
-            last_name: Yup.string()
-                .required('Last name is required')
-                .min(2, 'Minimum 2 characters'),
-            email: Yup.string().email('Invalid email').required('Email is required'),
-            password: Yup.string()
-                .required('Password is required')
-                .min(6, 'Minimum 6 characters'),
-        }),
-        onSubmit: (values: Register) => {
-            dispatch(register(values));
-        },
-    });
+    // Обработчик изменения полей
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const {name, value} = e.target;
+        setFormData(prev => ({...prev, [name]: value}));
+        
+        // Валидация при изменении, если поле было затронуто
+        if (touched[name as keyof typeof touched]) {
+            const error = validateField(name, value);
+            setErrors(prev => ({...prev, [name]: error}));
+        }
+    };
+
+    // Обработчик blur (когда поле теряет фокус)
+    const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+        const {name, value} = e.target;
+        setTouched(prev => ({...prev, [name]: true}));
+        const error = validateField(name, value);
+        setErrors(prev => ({...prev, [name]: error}));
+    };
+
+    // Обработчик отправки формы
+    const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        
+        // Помечаем все поля как затронутые
+        const allTouched = {
+            first_name: true,
+            last_name: true,
+            email: true,
+            password: true,
+        };
+        setTouched(allTouched);
+
+        // Валидация всех полей
+        const newErrors = {
+            first_name: validateField('first_name', formData.first_name),
+            last_name: validateField('last_name', formData.last_name),
+            email: validateField('email', formData.email),
+            password: validateField('password', formData.password),
+        };
+        setErrors(newErrors);
+
+        // Проверяем, есть ли ошибки
+        const hasErrors = Object.values(newErrors).some(error => error !== '');
+        
+        if (!hasErrors) {
+            // Отправляем данные на регистрацию
+            dispatch(register(formData as Register));
+        }
+    };
+
+    // Если регистрация успешна, не рендерим форму
+    if (isSuccess) {
+        return null;
+    }
 
     return (
         <Paper
@@ -128,72 +167,7 @@ const Registration = () => {
                 Registration
             </Typography>
 
-            {/*<Box*/}
-            {/*  sx={{*/}
-            {/*    border: `1px solid ${theme.palette.primary.light}`,*/}
-            {/*    display: "flex",*/}
-            {/*    gap: "2px",*/}
-            {/*    width: "max-content",*/}
-            {/*    borderRadius: "9px",*/}
-            {/*    margin: "10px auto 10px",*/}
-            {/*  }}*/}
-            {/*>*/}
-            {/*  <Box>*/}
-            {/*    <Button*/}
-            {/*      onClick={() => {*/}
-            {/*        setToggle("phone");*/}
-            {/*        router.push("/auth/registration/otp");*/}
-            {/*      }}*/}
-            {/*      size={"small"}*/}
-            {/*      sx={{*/}
-            {/*        borderRadius: "8px",*/}
-            {/*        padding: "8px 10px",*/}
-            {/*        backgroundColor: (theme) =>*/}
-            {/*          toggle === "phone"*/}
-            {/*            ? theme.palette.primary.light*/}
-            {/*            : "transparent",*/}
-            {/*      }}*/}
-            {/*    >*/}
-            {/*      <Typography*/}
-            {/*        component={"label"}*/}
-            {/*        color={"white"}*/}
-            {/*        variant={"subtitle1"}*/}
-            {/*        fontWeight={600}*/}
-            {/*      >*/}
-            {/*        Phone*/}
-            {/*      </Typography>*/}
-            {/*    </Button>*/}
-            {/*  </Box>*/}
-
-            {/*  <Box>*/}
-            {/*    <Button*/}
-            {/*      onClick={() => {*/}
-            {/*        setToggle("email");*/}
-            {/*        router.push("/auth/registration");*/}
-            {/*      }}*/}
-            {/*      size={"small"}*/}
-            {/*      sx={{*/}
-            {/*        borderRadius: "8px",*/}
-            {/*        padding: "8px 10px",*/}
-            {/*        backgroundColor: (theme) =>*/}
-            {/*          toggle === "email"*/}
-            {/*            ? theme.palette.primary.light*/}
-            {/*            : "transparent",*/}
-            {/*      }}*/}
-            {/*    >*/}
-            {/*      <Typography*/}
-            {/*        component={"label"}*/}
-            {/*        color={"white"}*/}
-            {/*        variant={"subtitle1"}*/}
-            {/*        fontWeight={600}*/}
-            {/*      >*/}
-            {/*        Email*/}
-            {/*      </Typography>*/}
-            {/*    </Button>*/}
-            {/*  </Box>*/}
-            {/*</Box>*/}
-
-            <form onSubmit={formik.handleSubmit}>
+            <form onSubmit={handleSubmit}>
                 <Box
                     sx={{
                         maxWidth: 300,
@@ -209,16 +183,12 @@ const Registration = () => {
                             margin="dense"
                             type="text"
                             name="first_name"
-                            value={formik.values.first_name}
-                            onChange={formik.handleChange}
-                            onBlur={formik.handleBlur}
-                            error={
-                                formik.touched.first_name && Boolean(formik.errors.first_name)
-                            }
+                            value={formData.first_name}
+                            onChange={handleChange}
+                            onBlur={handleBlur}
+                            error={touched.first_name && Boolean(errors.first_name)}
                             helperText={
-                                formik.touched.first_name
-                                    ? (formik.errors.first_name as string)
-                                    : undefined
+                                touched.first_name ? errors.first_name : undefined
                             }
                         />
 
@@ -230,14 +200,12 @@ const Registration = () => {
                             margin="dense"
                             type="text"
                             name="last_name"
-                            value={formik.values.last_name}
-                            onChange={formik.handleChange}
-                            onBlur={formik.handleBlur}
-                            error={formik.touched.last_name && Boolean(formik.errors.last_name)}
+                            value={formData.last_name}
+                            onChange={handleChange}
+                            onBlur={handleBlur}
+                            error={touched.last_name && Boolean(errors.last_name)}
                             helperText={
-                                formik.touched.last_name
-                                    ? (formik.errors.last_name as string)
-                                    : undefined
+                                touched.last_name ? errors.last_name : undefined
                             }
                         />
                     </Box>
@@ -250,12 +218,12 @@ const Registration = () => {
                         margin="dense"
                         type="email"
                         name="email"
-                        value={formik.values.email}
-                        onChange={formik.handleChange}
-                        onBlur={formik.handleBlur}
-                        error={formik.touched.email && Boolean(formik.errors.email)}
+                        value={formData.email}
+                        onChange={handleChange}
+                        onBlur={handleBlur}
+                        error={touched.email && Boolean(errors.email)}
                         helperText={
-                            formik.touched.email ? (formik.errors.email as string) : undefined
+                            touched.email ? errors.email : undefined
                         }
                     />
                     <Box
@@ -271,14 +239,12 @@ const Registration = () => {
                             margin="dense"
                             type={isPasswordVisible ? 'text' : 'password'}
                             name="password"
-                            value={formik.values.password}
-                            onChange={formik.handleChange}
-                            onBlur={formik.handleBlur}
-                            error={formik.touched.password && Boolean(formik.errors.password)}
+                            value={formData.password}
+                            onChange={handleChange}
+                            onBlur={handleBlur}
+                            error={touched.password && Boolean(errors.password)}
                             helperText={
-                                formik.touched.password
-                                    ? (formik.errors.password as string)
-                                    : undefined
+                                touched.password ? errors.password : undefined
                             }
                         />
                         <ShowAndHidePassword

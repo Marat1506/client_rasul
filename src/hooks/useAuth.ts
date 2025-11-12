@@ -1,7 +1,9 @@
 import { useEffect } from 'react';
-import useAppDispatch from './useAppDispatch';
+
 import { getCurrentUser } from '@/redux/actions/auth';
+
 import { getCookie } from './cookies.js';
+import useAppDispatch from './useAppDispatch';
 
 /**
  * Hook для загрузки данных пользователя при инициализации приложения
