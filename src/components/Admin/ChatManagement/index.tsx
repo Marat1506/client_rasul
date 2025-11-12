@@ -84,7 +84,7 @@ const ChatManagement = () => {
     useEffect(() => {
         // Load conversations and stats
         console.log('🚀 ChatManagement: Loading conversations on mount');
-        dispatch(getConversations());
+        dispatch(getConversations(undefined));
         dispatch(getChatStats());
     }, [dispatch]);
     
@@ -101,7 +101,7 @@ const ChatManagement = () => {
             };
             dispatch(addMessage({ conversationId: data.conversationId, message: normalizedMessage }));
             // Refresh conversations list
-            dispatch(getConversations());
+            dispatch(getConversations(undefined));
         };
 
         on('new_message', handleNewMessage);
@@ -179,7 +179,7 @@ const ChatManagement = () => {
                 setNotification({ open: true, message: 'Ответ отправлен', severity: 'success' });
 
                 // Refresh conversations
-                dispatch(getConversations());
+                dispatch(getConversations(undefined));
             } catch (error) {
                 setNotification({ open: true, message: 'Ошибка при отправке сообщения', severity: 'error' });
             }

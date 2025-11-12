@@ -71,7 +71,7 @@ export function ChatsProvider({ children }: { children: React.ReactNode }) {
         const isAdminOrModerator = user?.role?.name === 'Administrator' || user?.role?.name === 'Moderator';
         
         if (isAdminOrModerator) {
-            dispatch(getConversations());
+            dispatch(getConversations(undefined));
         } else {
             dispatch(getMyConversations());
         }

@@ -68,7 +68,7 @@ const AdminChat = ({ conversation, onClose }: AdminChatProps) => {
                 // Message is already added to Redux via sendMessage.fulfilled
                 // Socket will handle broadcasting to other users
                 // Refresh conversations list to update last message
-                dispatch(getConversations());
+                dispatch(getConversations(undefined));
             }
         } catch (error) {
             console.error('Failed to send message:', error);
