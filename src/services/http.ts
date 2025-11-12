@@ -1,6 +1,11 @@
-import axios from 'axios';
+import axios, { InternalAxiosRequestConfig } from 'axios';
 
 import { getCookie, createCookies, deleteCookies } from '@/hooks/cookies';
+
+// Расширяем тип для поддержки _retry флага
+interface ExtendedAxiosRequestConfig extends InternalAxiosRequestConfig {
+    _retry?: boolean;
+}
 
 const baseURL = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3001';
 const apiToken = process.env.NEXT_PUBLIC_API_TOKEN;
@@ -36,9 +41,11 @@ http.interceptors.request.use((config) => {
         return config;
     }
     
+    const extendedConfig = config as ExtendedAxiosRequestConfig;
+    
     // Если это повторный запрос после обновления токена (_retry === true),
     // НЕ изменяем заголовки - они уже установлены с новым токеном
-    if (config._retry) {
+    if (extendedConfig._retry) {
         return config;
     }
     
@@ -68,7 +75,7 @@ http.interceptors.request.use((config) => {
 http.interceptors.response.use(
     (response) => response,
     async (error) => {
-        const originalRequest = error.config;
+        const originalRequest = error.config as ExtendedAxiosRequestConfig;
 
         if (error.response?.status === 401 && !originalRequest._retry) {
             // Silently handle token refresh - this is normal operation

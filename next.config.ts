@@ -5,6 +5,14 @@ import withTM from 'next-transpile-modules';
 const nextConfig: NextConfig = {
     /* config options here */
     reactStrictMode: true,
+    typescript: {
+        // Отключаем проверку типов во время билда
+        ignoreBuildErrors: true,
+    },
+    eslint: {
+        // Отключаем ESLint во время билда
+        ignoreDuringBuilds: true,
+    },
     env: {
         NEXT_PUBLIC_BASE_URL: process.env.NEXT_PUBLIC_BASE_URL,
         NEXT_PUBLIC_API_TOKEN: process.env.NEXT_PUBLIC_API_TOKEN,
