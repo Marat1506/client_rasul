@@ -7,9 +7,9 @@ import { Box, Typography } from '@mui/material';
 import { alpha, useTheme } from '@mui/material/styles';
 import { useDispatch, useSelector } from 'react-redux';
 
-import { useSocket } from '@/hooks/useSocket';
 import MessageArea from '@/components/Chat/MessageArea';
 import MessageInput from '@/components/Chat/MessageInput';
+import { useSocket } from '@/hooks/useSocket';
 import { RootState } from '@/redux';
 import { sendMessage as sendMessageAction, getConversations } from '@/redux/actions/chat';
 import { addMessage } from '@/redux/reducers/chat';
