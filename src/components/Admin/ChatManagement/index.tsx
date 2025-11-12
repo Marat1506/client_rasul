@@ -33,8 +33,9 @@ import {
     Pagination,
     CircularProgress,
 } from '@mui/material';
-import { useDispatch, useSelector } from 'react-redux';
+import { useSelector } from 'react-redux';
 
+import useAppDispatch from '@/hooks/useAppDispatch';
 import { useSocket } from '@/hooks/useSocket';
 import { RootState } from '@/redux';
 import {
@@ -60,7 +61,7 @@ function TabPanel({ children, value, index }: TabPanelProps) {
 }
 
 const ChatManagement = () => {
-    const dispatch = useDispatch();
+    const dispatch = useAppDispatch();
     const { emit, on, off } = useSocket();
     const { conversations, currentConversation, messages: reduxMessages, stats, isLoading } = useSelector(
         (state: RootState) => state.chat
