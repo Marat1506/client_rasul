@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
 
 import { useRouter } from 'next/router';
-import { useSelector, useDispatch } from 'react-redux';
+import { useSelector } from 'react-redux';
 
 import { RootState } from '@/redux';
 import {
@@ -16,6 +16,7 @@ import {
 import { setCurrentConversation, addMessage } from '@/redux/reducers/chat';
 
 import { getCookie } from './cookies';
+import useAppDispatch from './useAppDispatch';
 import { useSocket } from './useSocket';
 
 const ChatsContext = createContext({
@@ -34,7 +35,7 @@ const ChatsContext = createContext({
 
 export function ChatsProvider({ children }: { children: React.ReactNode }) {
     const router = useRouter();
-    const dispatch = useDispatch();
+    const dispatch = useAppDispatch();
     const { on, off, emit, socket } = useSocket();
     const { user } = useSelector((state: RootState) => state.auth);
     const { conversations, currentConversation, messages: reduxMessages, isLoading } = useSelector(

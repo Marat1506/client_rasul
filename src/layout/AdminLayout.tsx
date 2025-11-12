@@ -34,10 +34,11 @@ import {
     Slide,
 } from '@mui/material';
 import {useRouter} from 'next/router';
-import {useSelector, useDispatch} from 'react-redux';
+import {useSelector} from 'react-redux';
 
 import Logo from '@/components/Logo';
 import CustomMenu from '@/layout/Menu';
+import useAppDispatch from '@/hooks/useAppDispatch';
 import {RootState} from '@/redux';
 import {logout} from '@/redux/actions/auth';
 
@@ -54,7 +55,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({children}) => {
     const [mobileOpen, setMobileOpen] = useState(false);
     const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
     const router = useRouter();
-    const dispatch = useDispatch();
+    const dispatch = useAppDispatch();
     const {user, isAuthorization} = useSelector((state: RootState) => state.auth);
 
     useEffect(() => {
