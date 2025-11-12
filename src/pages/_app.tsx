@@ -37,7 +37,6 @@ function AppContent({ Component, pageProps }: AppProps) {
                 rtl={false}
                 theme="colored"
                 transition={Bounce}
-                enableMultiContainer={false}
                 newestOnTop={true}
                 limit={1}
             />
