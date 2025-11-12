@@ -5,10 +5,11 @@ import { useEffect } from 'react';
 import ChevronLeft from '@mui/icons-material/ChevronLeft';
 import { Box, Typography } from '@mui/material';
 import { alpha, useTheme } from '@mui/material/styles';
-import { useDispatch, useSelector } from 'react-redux';
+import { useSelector } from 'react-redux';
 
 import MessageArea from '@/components/Chat/MessageArea';
 import MessageInput from '@/components/Chat/MessageInput';
+import useAppDispatch from '@/hooks/useAppDispatch';
 import { useSocket } from '@/hooks/useSocket';
 import { RootState } from '@/redux';
 import { sendMessage as sendMessageAction, getConversations } from '@/redux/actions/chat';
@@ -21,7 +22,7 @@ interface AdminChatProps {
 
 const AdminChat = ({ conversation, onClose }: AdminChatProps) => {
     const theme = useTheme();
-    const dispatch = useDispatch();
+    const dispatch = useAppDispatch();
     const { emit, on, off } = useSocket();
     const { messages: reduxMessages } = useSelector((state: RootState) => state.chat);
     const { user } = useSelector((state: RootState) => state.auth);
