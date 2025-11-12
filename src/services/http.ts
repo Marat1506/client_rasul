@@ -7,7 +7,18 @@ interface ExtendedAxiosRequestConfig extends InternalAxiosRequestConfig {
     _retry?: boolean;
 }
 
-const baseURL = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3001';
+// Получаем базовый URL из переменных окружения
+let baseURL = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3001';
+
+// Если приложение работает на HTTPS (продакшен), а API URL использует HTTP,
+// автоматически заменяем HTTP на HTTPS для избежания Mixed Content ошибок
+if (typeof window !== 'undefined' && window.location.protocol === 'https:') {
+    // Если baseURL начинается с http://, заменяем на https://
+    if (baseURL.startsWith('http://')) {
+        baseURL = baseURL.replace('http://', 'https://');
+    }
+}
+
 const apiToken = process.env.NEXT_PUBLIC_API_TOKEN;
 
 let isRefreshing = false;
