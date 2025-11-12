@@ -1,0 +1,33 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  //user-select: none;
+  //-webkit-user-select: none;
+  //-moz-user-select: none;
+  //-ms-user-select: none;
+  //-webkit-touch-callout: none;
+  //-webkit-tap-highlight-color: transparent;
+  //outline: none;
+  //-webkit-appearance: none;
+  //-moz-appearance: none;
+  //appearance: none;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+.container {
+  width: 100%;
+  max-width: calc(1720 / 1920 * 100%);
+  margin: 0 auto;
+
+  @media (max-width: 600px) {
+    max-width: calc(380 / 390 * 100%);
+  }
+}
+
+a {
+  text-decoration: none;
+}

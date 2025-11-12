@@ -1,0 +1,50 @@
+.MenuContent {
+  position: absolute;
+  width: 102%;
+  height: 100%;
+  z-index: 99;
+  top: -18px;
+  left: -4px;
+
+  .menu_items {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 10px;
+    padding: 25px 30px;
+
+    div {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+  }
+
+  .social {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 15px;
+    margin-top: 15px;
+  }
+
+  .social_icons {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .profile {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .avatar {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+  }
+}
+

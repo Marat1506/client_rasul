@@ -1,0 +1,75 @@
+{
+  "social": [
+    {
+      "name": "FaceBook",
+      "slug": "facebook",
+      "color": "#1672E6",
+      "icon": "facebook",
+      "href": "facebook.com"
+    },
+    {
+      "name": "Instagram",
+      "slug": "instagram",
+      "color": "#F40052",
+      "icon": "instagram",
+      "href": "instagram.com"
+    },
+    {
+      "name": "Telegram",
+      "slug": "telegram",
+      "color": "#0962B7",
+      "icon": "telegram",
+      "href": "telegram.com"
+    }
+  ],
+  "menu": [
+    {
+      "name": "Helpdesk",
+      "slug": "helpdesk",
+      "href": "/chat",
+      "icon": "helpdesk"
+    },
+    {
+      "name": "FAQ",
+      "slug": "faq",
+      "href": "/faq",
+      "icon": "faq"
+    },
+    {
+      "name": "About",
+      "slug": "about",
+      "href": "/about",
+      "icon": "about"
+    },
+    {
+      "name": "Log out",
+      "slug": "logout",
+      "href": "",
+      "icon": "faq"
+    }
+  ],
+  "company": {
+    "email": "sales@Security.com",
+    "phone": "+971000000000"
+  },
+  "advantages1": [
+    "Утечка данных",
+    "Взлом периметра сети",
+    "Взлом конечных точек",
+    "Неправомерный доступ к информации",
+    "Подмена информации",
+    "Взлом защиты системы"
+  ],
+  "advantages2": [
+    "Взлом сайта",
+    "Ботнет",
+    "Взлом 1С",
+    "Взлом базы данных",
+    "Взлом почты",
+    "Взлом CRM",
+    "Взлом ERP",
+    "DDOS-атака",
+    "Майнинг",
+    "Взлом процессинга"
+  ]
+}

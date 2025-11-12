@@ -1,0 +1,36 @@
+.Menu {
+  position: relative;
+  width: 83px;
+  height: 35px;
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  gap: 20px;
+  box-sizing: border-box;
+  border-radius: 27.5px;
+  padding: 1px 7px 0 2px;
+
+  .avatar {
+    border-radius: 100%;
+  }
+
+  .burger {
+    width: 24px;
+    height: 24px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+  }
+
+  .modal {
+    position: absolute;
+    top: 120%;
+    right: 10px;
+    width: 352px;
+    border-radius: 8px;
+    z-index: 1000;
+    padding: 20px;
+  }
+}

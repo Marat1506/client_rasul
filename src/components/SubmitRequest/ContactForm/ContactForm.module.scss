@@ -1,0 +1,42 @@
+.contact {
+  display: flex;
+  flex-wrap: wrap;
+  column-gap: 16px;
+
+  .info {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin-top: 5px;
+  }
+}
+
+.icon_button {
+  span {
+    margin-left: -2px;
+  }
+}
+
+.form_buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+
+  @media (min-width: 600px) {
+    margin-top: 165px;
+  }
+}
+
+.unset {
+  margin-top: 10px !important;
+}
+
+.form_images {
+  display: flex;
+  gap: 15px;
+
+  @media (min-width: 600px) {
+    margin-top: 150px;
+  }
+}

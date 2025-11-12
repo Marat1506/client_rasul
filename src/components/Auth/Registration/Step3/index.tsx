@@ -1,0 +1,85 @@
+import React, {useCallback} from 'react';
+
+import {Button, Paper, TextField, Typography} from '@mui/material';
+import {Box} from '@mui/system';
+import {useRouter} from 'next/router';
+
+const Step = () => {
+    const router = useRouter();
+
+    const handleStep = useCallback(() => {
+        // router.push({
+        //     pathname: router.pathname,
+        //     query: {...router.query, step: 3}
+        // }); 
+    }, []); // router
+
+    return (
+        <Paper
+            sx={{
+                maxWidth: 700,
+                margin: '100px auto 10px'
+            }}
+        >
+            <Typography align={'center'} variant="h2" color="white">
+                Registration
+            </Typography>
+            <Typography align={'center'} variant="h4" color="white">
+                Шаг 3 <Typography component={'span'} variant="h4" color="text.secondary">из 3</Typography>
+            </Typography>
+
+            <Typography fontWeight={400} maxWidth={400} margin={'10px auto'} align={'center'} variant="subtitle1"
+                        color="text.secondary">
+                Придумайте пароль, он должен быть не менее 6 латинских символов
+            </Typography>
+
+
+            <form>
+                <Box sx={{
+                    maxWidth: 300,
+                    margin: 'auto'
+                }}>
+                    <TextField
+                        sx={{
+                            width: '100%'
+                        }}
+                        placeholder={'Пароль'}
+                        fullWidth
+                        variant="outlined"
+                        required
+                        margin="dense"
+                        type="password"
+                    />
+
+                    <TextField
+                        sx={{
+                            width: '100%'
+                        }}
+                        placeholder={'Подтвердите пароль'}
+                        fullWidth
+                        variant="outlined"
+                        required
+                        margin="dense"
+                        type="password"
+                    />
+
+                    <Button
+                        onClick={() => handleStep()}
+                        variant={'contained'}
+                        size={'large'}
+                        sx={{
+                            mt: 1,
+                            width: '100%',
+                            background: (theme) => theme.palette.background.paper,
+                            color: (theme) => theme.palette.text.primary,
+                        }}
+                    >
+                        Register
+                    </Button>
+                </Box>
+            </form>
+        </Paper>
+    );
+};
+
+export default Step;

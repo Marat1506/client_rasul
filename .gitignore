@@ -1,0 +1,33 @@
+# Node.js
+node_modules/
+
+# macOS
+.DS_Store
+
+# Editor-specific files
+.vscode/
+*.sublime-project
+*.sublime-workspace
+.idea/
+
+# Logs
+logs/
+*.log
+
+# Output files
+dist/
+*.min.js
+
+# Build and runtime caches
+.next/
+.cache/
+out/
+
+# SSL and local data
+certbot/
+data/
+
+# Environment files
+.env.local
+.env*.local
+.env
