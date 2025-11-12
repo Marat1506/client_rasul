@@ -13,7 +13,7 @@ export const createConversation = createAsyncThunk(
 
 export const getConversations = createAsyncThunk(
     'chat/getConversations',
-    async (params?: { status?: string; user_id?: string; search?: string }, { rejectWithValue }) => {
+    async (params: { status?: string; user_id?: string; search?: string } | undefined = undefined, { rejectWithValue }) => {
         try {
             const response = await Api.getConversations(params);
             // Backend returns { data: [...] }, so we need to extract data.data

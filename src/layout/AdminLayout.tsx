@@ -36,9 +36,9 @@ import {
 import {useRouter} from 'next/router';
 import {useSelector} from 'react-redux';
 
-import useAppDispatch from '@/hooks/useAppDispatch';
 import Logo from '@/components/Logo';
 import CustomMenu from '@/layout/Menu';
+import useAppDispatch from '@/hooks/useAppDispatch';
 import {RootState} from '@/redux';
 import {logout} from '@/redux/actions/auth';
 
