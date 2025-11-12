@@ -3,19 +3,12 @@ import { io, Socket } from "socket.io-client";
 import { getCookie } from "@/hooks/cookies";
 
 // Получаем Socket URL из переменных окружения
-let SOCKET_URL: string =
+// Для WebSocket в продакшене используем тот же HTTP URL (WebSocket работает через ws:// или wss://)
+// Socket.IO автоматически обработает протокол
+const SOCKET_URL: string =
   process.env.NEXT_PUBLIC_SOCKET_URL ||
   process.env.NEXT_PUBLIC_BASE_URL ||
   "http://localhost:3001";
-
-// Если приложение работает на HTTPS (продакшен), а Socket URL использует HTTP,
-// автоматически заменяем HTTP на HTTPS для избежания Mixed Content ошибок
-if (typeof window !== "undefined" && window.location.protocol === "https:") {
-  // Если SOCKET_URL начинается с http://, заменяем на https://
-  if (SOCKET_URL.startsWith("http://")) {
-    SOCKET_URL = SOCKET_URL.replace("http://", "https://");
-  }
-}
 
 let socket: Socket | null = null;
 

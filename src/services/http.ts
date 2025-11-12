@@ -8,16 +8,16 @@ interface ExtendedAxiosRequestConfig extends InternalAxiosRequestConfig {
 }
 
 // Получаем базовый URL из переменных окружения
-let baseURL = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3001';
+const backendURL = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3001';
 
-// Если приложение работает на HTTPS (продакшен), а API URL использует HTTP,
-// автоматически заменяем HTTP на HTTPS для избежания Mixed Content ошибок
-if (typeof window !== 'undefined' && window.location.protocol === 'https:') {
-    // Если baseURL начинается с http://, заменяем на https://
-    if (baseURL.startsWith('http://')) {
-        baseURL = baseURL.replace('http://', 'https://');
-    }
-}
+// В продакшене (HTTPS) используем прокси через Next.js API routes для обхода Mixed Content
+// В разработке используем прямой URL к бэкенду
+const isProduction = typeof window !== 'undefined' && window.location.protocol === 'https:';
+// Убираем trailing slash для правильного формирования путей
+const baseURL = isProduction ? '/api/proxy' : backendURL.replace(/\/$/, '');
+
+// Функция для получения полного URL бэкенда (для refresh token и других серверных запросов)
+const getBackendURL = () => backendURL;
 
 const apiToken = process.env.NEXT_PUBLIC_API_TOKEN;
 
