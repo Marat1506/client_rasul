@@ -1,5 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 
+// Используем NEXT_PUBLIC_BASE_URL (доступна и в серверных функциях)
 const BACKEND_URL = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3001';
 
 // Прокси для загрузки изображений из uploads директории бэкенда
