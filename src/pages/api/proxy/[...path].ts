@@ -33,38 +33,25 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     
     try {
         // Получаем заголовки из запроса
-        const headers: Record<string, string> = {};
+        const headers: Record<string, string> = {
+            'Content-Type': 'application/json',
+        };
         
         // Копируем Authorization заголовок, если он есть
         if (req.headers.authorization) {
             headers.Authorization = req.headers.authorization;
         }
         
-        // Копируем Content-Type заголовок
+        // Копируем другие важные заголовки
         if (req.headers['content-type']) {
             headers['Content-Type'] = req.headers['content-type'] as string;
-        } else if (req.method !== 'GET' && req.method !== 'HEAD') {
-            headers['Content-Type'] = 'application/json';
-        }
-        
-        // Подготавливаем тело запроса
-        let body: string | undefined = undefined;
-        if (req.method !== 'GET' && req.method !== 'HEAD') {
-            if (req.body) {
-                // Если тело уже распарсено Next.js, преобразуем в JSON
-                if (typeof req.body === 'string') {
-                    body = req.body;
-                } else {
-                    body = JSON.stringify(req.body);
-                }
-            }
         }
         
         // Делаем запрос к бэкенду
         const response = await fetch(fullUrl, {
             method: req.method,
             headers,
-            body,
+            body: req.method !== 'GET' && req.method !== 'HEAD' ? JSON.stringify(req.body) : undefined,
         });
         
         // Получаем данные ответа
@@ -85,12 +72,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             res.setHeader('Content-Type', contentType);
         }
         
-        // Копируем CORS заголовки, если они есть
-        const accessControlAllowOrigin = response.headers.get('access-control-allow-origin');
-        if (accessControlAllowOrigin) {
-            res.setHeader('Access-Control-Allow-Origin', accessControlAllowOrigin);
-        }
-        
         // Отправляем ответ
         if (typeof jsonData === 'object') {
             res.json(jsonData);
@@ -99,13 +80,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         }
     } catch (error: any) {
         console.error('Proxy error:', error);
-        console.error('Request URL:', fullUrl);
-        console.error('Request method:', req.method);
-        console.error('Request body:', req.body);
         res.status(500).json({ 
             message: 'Proxy error', 
-            error: error.message || 'Internal server error',
-            url: fullUrl
+            error: error.message || 'Internal server error' 
         });
     }
 }
