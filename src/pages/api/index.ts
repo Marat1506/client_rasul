@@ -2,6 +2,13 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3001';
 
+// Отключаем автоматический парсинг тела для Socket.IO
+export const config = {
+    api: {
+        bodyParser: false,
+    },
+};
+
 // Этот route обрабатывает запросы к /api
 // Если это запрос Socket.IO (с параметрами EIO и transport), проксируем на бэкенд
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -34,7 +41,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             // Копируем все важные заголовки для Socket.IO
             if (req.headers['content-type']) {
                 headers['Content-Type'] = req.headers['content-type'] as string;
+            } else if (req.method === 'POST') {
+                // Socket.IO polling POST запросы обычно используют text/plain
+                headers['Content-Type'] = 'text/plain; charset=UTF-8';
             }
+            
             if (req.headers['accept']) {
                 headers['Accept'] = req.headers['accept'] as string;
             }
@@ -50,7 +61,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                 headers['Cookie'] = req.headers.cookie;
             }
             
+            // Копируем User-Agent, если есть
+            if (req.headers['user-agent']) {
+                headers['User-Agent'] = req.headers['user-agent'] as string;
+            }
+            
             // Для Socket.IO polling нужно правильно обработать тело запроса
+            // Socket.IO может отправлять данные в разных форматах (text/plain, application/json)
             let body: string | undefined = undefined;
             if (req.method !== 'GET' && req.method !== 'HEAD') {
                 // Читаем тело запроса как stream
@@ -63,6 +80,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                 }
             }
             
+            // Логируем для отладки (только в development)
+            if (process.env.NODE_ENV === 'development') {
+                console.log('Socket.IO proxy request:', {
+                    method: req.method,
+                    url,
+                    hasBody: !!body,
+                    query: req.query
+                });
+            }
+            
             // Делаем запрос к бэкенду
             const response = await fetch(url, {
                 method: req.method,
@@ -72,6 +99,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             
             // Получаем данные ответа
             const data = await response.text();
+            
+            // Логируем ошибки для отладки
+            if (response.status >= 400) {
+                console.error('Socket.IO backend error:', {
+                    status: response.status,
+                    url,
+                    method: req.method,
+                    data: data.substring(0, 200), // Первые 200 символов
+                    query: req.query
+                });
+            }
             
             // Копируем статус и заголовки ответа
             res.status(response.status);
