@@ -10,6 +10,7 @@ export const config = {
     },
 };
 
+
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
     // Убираем trailing slash из BACKEND_URL
     const backendURLFixed = BACKEND_URL.replace(/\/$/, '');
