@@ -1,15 +1,38 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 
 // Используем NEXT_PUBLIC_BASE_URL (доступна и в серверных функциях)
-const BACKEND_URL = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3001';
+// В Vercel переменные окружения доступны через process.env
+const BACKEND_URL = process.env.NEXT_PUBLIC_BASE_URL || process.env.BACKEND_URL || 'http://localhost:3001';
+
+// Логируем доступные переменные окружения (только в development)
+if (process.env.NODE_ENV !== 'production') {
+    console.log('Environment variables:', {
+        NEXT_PUBLIC_BASE_URL: process.env.NEXT_PUBLIC_BASE_URL,
+        BACKEND_URL: process.env.BACKEND_URL,
+        NODE_ENV: process.env.NODE_ENV
+    });
+}
 
 // Прокси для загрузки изображений из uploads директории бэкенда
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+    // Логируем все запросы для отладки
+    console.log('=== UPLOADS PROXY REQUEST ===');
+    console.log('Method:', req.method);
+    console.log('URL:', req.url);
+    console.log('Query:', req.query);
+    console.log('BACKEND_URL:', BACKEND_URL);
+    
     // Получаем путь к файлу из query параметров
+    // В catch-all route path будет массивом, например ['1763004166050-r878684q6v.jpg']
     const { path } = req.query;
     
     // Формируем путь к файлу
-    const pathString = Array.isArray(path) ? path.join('/') : path || '';
+    const pathString = Array.isArray(path) ? path.join('/') : (path || '');
+    
+    if (!pathString) {
+        res.status(400).json({ message: 'File path is required' });
+        return;
+    }
     
     // Убираем ведущий слэш, если есть
     let filePath = pathString.startsWith('/') ? pathString.substring(1) : pathString;
@@ -24,34 +47,44 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const url = `${backendURLFixed}/uploads/${filePath}`;
     
     console.log('Uploads proxy request:', {
+        originalPath: path,
         pathString,
         filePath,
         url,
-        backendURL: BACKEND_URL
+        backendURL: BACKEND_URL,
+        method: req.method,
+        query: req.query
     });
     
     try {
         // Делаем запрос к бэкенду для получения изображения
         const response = await fetch(url, {
             method: 'GET',
+            headers: {
+                'User-Agent': 'Next.js-Proxy/1.0',
+            },
         });
         
         console.log('Backend response:', {
             status: response.status,
             statusText: response.statusText,
             url,
-            headers: Object.fromEntries(response.headers.entries())
+            contentType: response.headers.get('content-type'),
+            contentLength: response.headers.get('content-length')
         });
         
         if (!response.ok) {
+            const errorText = await response.text().catch(() => '');
             console.error('Failed to fetch file:', {
                 status: response.status,
                 statusText: response.statusText,
-                url
+                url,
+                errorText: errorText.substring(0, 200)
             });
             res.status(response.status).json({ 
                 message: 'File not found',
-                error: `Failed to fetch file: ${response.statusText}`
+                error: `Failed to fetch file: ${response.statusText}`,
+                url
             });
             return;
         }

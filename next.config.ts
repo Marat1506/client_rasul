@@ -33,7 +33,14 @@ const nextConfig: NextConfig = {
                 port: '3001',
                 pathname: '/uploads/**',
             },
+            {
+                protocol: 'https',
+                hostname: '*.vercel.app',
+                pathname: '/api/uploads/**',
+            },
         ],
+        // Разрешаем использование нашего API route для изображений
+        unoptimized: false,
     },
 
     transpilePackages: [
