@@ -31,8 +31,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         });
         
         const queryString = queryParams.toString();
-        // Socket.IO использует путь /socket.io/
-        const url = `${backendURLFixed}/socket.io${queryString ? `?${queryString}` : ''}`;
+        // Socket.IO использует путь /socket.io/ (с trailing slash)
+        // Но для запросов polling может быть без слэша
+        const url = `${backendURLFixed}/socket.io/${queryString ? `?${queryString}` : ''}`;
         
         try {
             // Получаем заголовки из запроса
