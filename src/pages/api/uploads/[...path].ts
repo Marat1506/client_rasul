@@ -11,7 +11,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const pathString = Array.isArray(path) ? path.join('/') : path || '';
     
     // Убираем ведущий слэш, если есть
-    const filePath = pathString.startsWith('/') ? pathString.substring(1) : pathString;
+    let filePath = pathString.startsWith('/') ? pathString.substring(1) : pathString;
+    
+    // Если путь уже начинается с uploads/, убираем его, так как мы добавим его в URL
+    if (filePath.startsWith('uploads/')) {
+        filePath = filePath.substring('uploads/'.length);
+    }
     
     // Формируем URL к бэкенду
     const backendURLFixed = BACKEND_URL.replace(/\/$/, '');

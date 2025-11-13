@@ -15,7 +15,9 @@ export const getAvatarUrl = (avatarPath: string | null | undefined): string | nu
             // В продакшене HTTP URL нужно проксировать через Next.js API
             // Извлекаем путь из URL (например, http://31.57.228.116/uploads/file.jpg -> /uploads/file.jpg)
             const url = new URL(avatarPath);
-            return `/api/uploads${url.pathname}`;
+            // Убираем ведущий /uploads если есть, так как API route уже содержит /uploads
+            const path = url.pathname.startsWith('/uploads/') ? url.pathname.substring('/uploads'.length) : url.pathname;
+            return `/api/uploads${path}`;
         }
         return avatarPath;
     }
@@ -24,6 +26,10 @@ export const getAvatarUrl = (avatarPath: string | null | undefined): string | nu
     if (avatarPath.startsWith('/')) {
         if (isProduction) {
             // В продакшене используем прокси через Next.js API
+            // Если путь уже начинается с /uploads/, убираем его, так как API route уже содержит /uploads
+            if (avatarPath.startsWith('/uploads/')) {
+                return `/api${avatarPath}`;
+            }
             return `/api/uploads${avatarPath}`;
         }
         // В разработке используем прямой URL к бэкенду
@@ -34,6 +40,10 @@ export const getAvatarUrl = (avatarPath: string | null | undefined): string | nu
     // Иначе считаем относительным путем
     if (isProduction) {
         // В продакшене используем прокси
+        // Если путь уже начинается с uploads/, не добавляем еще раз
+        if (avatarPath.startsWith('uploads/')) {
+            return `/api/${avatarPath}`;
+        }
         return `/api/uploads/${avatarPath}`;
     }
     // В разработке используем прямой URL
