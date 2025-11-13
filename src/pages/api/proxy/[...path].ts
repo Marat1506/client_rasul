@@ -2,6 +2,13 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3001';
 
+// Отключаем автоматический парсинг тела для multipart/form-data
+export const config = {
+    api: {
+        bodyParser: false,
+    },
+};
+
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
     // Получаем путь из query параметров
     const { path } = req.query;
@@ -33,25 +40,62 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     
     try {
         // Получаем заголовки из запроса
-        const headers: Record<string, string> = {
-            'Content-Type': 'application/json',
-        };
+        const headers: Record<string, string> = {};
         
         // Копируем Authorization заголовок, если он есть
         if (req.headers.authorization) {
             headers.Authorization = req.headers.authorization;
         }
         
-        // Копируем другие важные заголовки
+        // Копируем Content-Type заголовок (важно для multipart/form-data)
         if (req.headers['content-type']) {
             headers['Content-Type'] = req.headers['content-type'] as string;
+        }
+        
+        // Копируем другие важные заголовки
+        if (req.headers['user-agent']) {
+            headers['User-Agent'] = req.headers['user-agent'] as string;
+        }
+        
+        // Обрабатываем тело запроса
+        let body: string | Buffer | undefined = undefined;
+        
+        if (req.method !== 'GET' && req.method !== 'HEAD') {
+            // Если это multipart/form-data, читаем тело как stream
+            if (req.headers['content-type']?.includes('multipart/form-data')) {
+                const chunks: Buffer[] = [];
+                for await (const chunk of req) {
+                    chunks.push(chunk);
+                }
+                if (chunks.length > 0) {
+                    body = Buffer.concat(chunks);
+                }
+            } else {
+                // Для JSON и других типов читаем как текст
+                const chunks: Buffer[] = [];
+                for await (const chunk of req) {
+                    chunks.push(chunk);
+                }
+                if (chunks.length > 0) {
+                    body = Buffer.concat(chunks).toString();
+                    // Если это JSON, парсим и отправляем как JSON
+                    if (req.headers['content-type']?.includes('application/json')) {
+                        try {
+                            const jsonData = JSON.parse(body as string);
+                            body = JSON.stringify(jsonData);
+                        } catch {
+                            // Если не JSON, оставляем как есть
+                        }
+                    }
+                }
+            }
         }
         
         // Делаем запрос к бэкенду
         const response = await fetch(fullUrl, {
             method: req.method,
             headers,
-            body: req.method !== 'GET' && req.method !== 'HEAD' ? JSON.stringify(req.body) : undefined,
+            body: body as any,
         });
         
         // Получаем данные ответа
