@@ -1,4 +1,4 @@
-import {useEffect, useState, useRef} from 'react';
+import {useEffect, useLayoutEffect, useState, useRef} from 'react';
 import React from 'react';
 
 import {
@@ -11,7 +11,6 @@ import {
 import {Box} from '@mui/system';
 import {useRouter} from 'next/router';
 import {useSelector} from 'react-redux';
-import {toast} from 'react-toastify';
 
 import useAppDispatch from '@/hooks/useAppDispatch';
 import {Register} from '@/interfaces';
@@ -52,9 +51,15 @@ const Registration = () => {
         (state: RootState) => state.auth.register
     );
 
+    // Устанавливаем флаг навигации сразу при успешной регистрации
+    // Это предотвращает любые обновления DOM до навигации
+    if (isSuccess && !isRedirectingRef.current) {
+        isRedirectingRef.current = true;
+    }
+
     useEffect(() => {
         if (isFail) {
-            toast.error(message || 'Something went wrong');
+            // Убрали toast, чтобы избежать ошибок removeChild
             dispatch(clean());
         }
     }, [isFail, message, dispatch]);
@@ -66,10 +71,11 @@ const Registration = () => {
         };
     }, []);
 
-    useEffect(() => {
-        if (isSuccess && !isRedirectingRef.current) {
-            isRedirectingRef.current = true;
-            // Используем немедленную навигацию через window.location.href
+    // Используем useLayoutEffect для синхронной навигации ДО того, как браузер отрисует изменения
+    // Это предотвращает любые попытки React обновить DOM во время навигации
+    useLayoutEffect(() => {
+        if (isSuccess && isRedirectingRef.current) {
+            // Немедленная навигация через window.location.href
             // Это полностью перезагружает страницу и предотвращает любые конфликты с React DOM
             window.location.href = '/auth/login';
         }
@@ -102,6 +108,9 @@ const Registration = () => {
 
     // Обработчик изменения полей
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        // Предотвращаем обновления после начала навигации
+        if (isRedirectingRef.current) return;
+        
         const {name, value} = e.target;
         setFormData(prev => ({...prev, [name]: value}));
         
@@ -114,6 +123,9 @@ const Registration = () => {
 
     // Обработчик blur (когда поле теряет фокус)
     const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+        // Предотвращаем обновления после начала навигации
+        if (isRedirectingRef.current) return;
+        
         const {name, value} = e.target;
         setTouched(prev => ({...prev, [name]: true}));
         const error = validateField(name, value);
@@ -123,6 +135,9 @@ const Registration = () => {
     // Обработчик отправки формы
     const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
+        
+        // Предотвращаем отправку после начала навигации
+        if (isRedirectingRef.current) return;
         
         // Помечаем все поля как затронутые
         const allTouched = {
@@ -151,8 +166,10 @@ const Registration = () => {
         }
     };
 
-    // Если регистрация успешна, не рендерим форму
-    if (isSuccess) {
+    // Если регистрация успешна или начата навигация, не рендерим форму
+    // Это должно быть ДО всех хуков, но мы не можем так сделать из-за правил хуков
+    // Поэтому проверяем в начале рендера
+    if (isSuccess || isRedirectingRef.current) {
         return null;
     }
 

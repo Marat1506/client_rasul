@@ -1,4 +1,4 @@
-import {useEffect, useState, useRef} from 'react';
+import {useEffect, useLayoutEffect, useState, useRef} from 'react';
 
 import {
     Button,
@@ -10,7 +10,6 @@ import {
 import {Box} from '@mui/system';
 import {useRouter} from 'next/router';
 import {useSelector} from 'react-redux';
-import {toast} from 'react-toastify';
 
 import useAppDispatch from '@/hooks/useAppDispatch';
 import {LogIn as LogInType} from '@/interfaces';
@@ -45,9 +44,15 @@ const LogIn = () => {
         (state: RootState) => state.auth.login
     );
 
+    // Устанавливаем флаг навигации сразу при успешном входе
+    // Это предотвращает любые обновления DOM до навигации
+    if (isSuccess && !isRedirectingRef.current) {
+        isRedirectingRef.current = true;
+    }
+
     useEffect(() => {
         if (isFail) {
-            toast.error(message || 'Login failed');
+            // Убрали toast, чтобы избежать ошибок removeChild
             dispatch(clean());
         }
     }, [isFail, message, dispatch]);
@@ -59,10 +64,9 @@ const LogIn = () => {
         };
     }, []);
 
-    useEffect(() => {
-        if (isSuccess && !isRedirectingRef.current) {
-            isRedirectingRef.current = true;
-            
+    // Используем useLayoutEffect для синхронной навигации ДО того, как браузер отрисует изменения
+    useLayoutEffect(() => {
+        if (isSuccess && isRedirectingRef.current) {
             // Загружаем данные пользователя после успешного входа
             const loadUserAndRedirect = async () => {
                 try {
@@ -103,6 +107,9 @@ const LogIn = () => {
 
     // Обработчик изменения полей
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        // Предотвращаем обновления после начала навигации
+        if (isRedirectingRef.current) return;
+        
         const {name, value} = e.target;
         setFormData(prev => ({...prev, [name]: value}));
         
@@ -115,6 +122,9 @@ const LogIn = () => {
 
     // Обработчик blur (когда поле теряет фокус)
     const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+        // Предотвращаем обновления после начала навигации
+        if (isRedirectingRef.current) return;
+        
         const {name, value} = e.target;
         setTouched(prev => ({...prev, [name]: true}));
         const error = validateField(name, value);
@@ -124,6 +134,9 @@ const LogIn = () => {
     // Обработчик отправки формы
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
+        
+        // Предотвращаем отправку после начала навигации
+        if (isRedirectingRef.current) return;
         
         // Помечаем все поля как затронутые
         const allTouched = {
@@ -152,8 +165,8 @@ const LogIn = () => {
         }
     };
 
-    // Если вход успешен, не рендерим форму
-    if (isSuccess) {
+    // Если вход успешен или начата навигация, не рендерим форму
+    if (isSuccess || isRedirectingRef.current) {
         return null;
     }
 
