@@ -8,6 +8,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     
     // Формируем полный URL к бэкенду
     // path будет массивом типа ['api', 'v1', 'users', 'register']
+    // Передаем весь путь как есть к бэкенду
     const pathString = Array.isArray(path) ? path.join('/') : path || '';
     const backendPath = pathString ? `/${pathString}` : '';
     

@@ -138,8 +138,11 @@ http.interceptors.response.use(
                 }
 
                 // Исправляем URL - правильный эндпоинт для refresh токена
-                const baseURLFixed = baseURL?.replace(/\/$/, ''); // Убираем trailing slash
-                const refreshURL = `${baseURLFixed}/api/v1/users/refresh-token`;
+                // В продакшене используем прокси (прокси уберет первый 'api' из пути)
+                // В разработке - прямой URL
+                const refreshURL = isProduction 
+                    ? '/api/proxy/api/v1/users/refresh-token'  // Прокси уберет первый 'api', получится /api/v1/users/refresh-token
+                    : `${getBackendURL().replace(/\/$/, '')}/api/v1/users/refresh-token`;
 
                 // Используем правильный эндпоинт
                 const res = await axios.post(refreshURL, {
