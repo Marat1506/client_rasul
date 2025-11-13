@@ -11,6 +11,7 @@ import { RootState } from '@/redux';
 import styles from './Navbar.module.scss';
  
 const Navbar = () => {
+    
     const { user, isAuthorization } = useSelector((state: RootState) => state.auth);
     const router = useRouter();
 

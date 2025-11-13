@@ -17,6 +17,8 @@ import avatar from '../../../public/images/user.svg';
 
 
 const Menu: React.FC = () => {
+
+    
     const theme = useTheme();
     const [isOpen, setIsOpen] = useState<boolean>(false);
     const [mounted, setMounted] = useState(false);

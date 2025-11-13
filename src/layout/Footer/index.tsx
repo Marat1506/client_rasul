@@ -11,6 +11,7 @@ import { ResponsiveImage } from '@/components/UI/ResponsiveImage';
 import biglogo from '../../../public/images/darkbiglogo.svg';
 
 const Footer = () => {
+    
     const router = useRouter();
     const theme = useTheme();
     const mdQuery = useMediaQuery(theme.breakpoints.down(860));
