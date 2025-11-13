@@ -22,13 +22,32 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const backendURLFixed = BACKEND_URL.replace(/\/$/, '');
     const url = `${backendURLFixed}/uploads/${filePath}`;
     
+    console.log('Uploads proxy request:', {
+        pathString,
+        filePath,
+        url,
+        backendURL: BACKEND_URL
+    });
+    
     try {
         // Делаем запрос к бэкенду для получения изображения
         const response = await fetch(url, {
             method: 'GET',
         });
         
+        console.log('Backend response:', {
+            status: response.status,
+            statusText: response.statusText,
+            url,
+            headers: Object.fromEntries(response.headers.entries())
+        });
+        
         if (!response.ok) {
+            console.error('Failed to fetch file:', {
+                status: response.status,
+                statusText: response.statusText,
+                url
+            });
             res.status(response.status).json({ 
                 message: 'File not found',
                 error: `Failed to fetch file: ${response.statusText}`
