@@ -61,23 +61,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         let body: string | Buffer | undefined = undefined;
         
         if (req.method !== 'GET' && req.method !== 'HEAD') {
-            // Если это multipart/form-data, читаем тело как stream
-            if (req.headers['content-type']?.includes('multipart/form-data')) {
-                const chunks: Buffer[] = [];
-                for await (const chunk of req) {
-                    chunks.push(chunk);
-                }
-                if (chunks.length > 0) {
-                    body = Buffer.concat(chunks);
-                }
-            } else {
-                // Для JSON и других типов читаем как текст
-                const chunks: Buffer[] = [];
-                for await (const chunk of req) {
-                    chunks.push(chunk);
-                }
-                if (chunks.length > 0) {
-                    body = Buffer.concat(chunks).toString();
+            // Читаем тело запроса как Buffer (сохраняет multipart boundary)
+            const chunks: Buffer[] = [];
+            for await (const chunk of req) {
+                chunks.push(chunk);
+            }
+            if (chunks.length > 0) {
+                const buffer = Buffer.concat(chunks);
+                
+                // Для multipart/form-data передаем Buffer как есть
+                if (req.headers['content-type']?.includes('multipart/form-data')) {
+                    body = buffer;
+                } else {
+                    // Для JSON и других типов конвертируем в строку
+                    body = buffer.toString();
                     // Если это JSON, парсим и отправляем как JSON
                     if (req.headers['content-type']?.includes('application/json')) {
                         try {
@@ -89,6 +86,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                     }
                 }
             }
+        }
+        
+        // Логируем для отладки (только для файловых запросов)
+        if (req.headers['content-type']?.includes('multipart/form-data')) {
+            console.log('File upload request:', {
+                method: req.method,
+                url: fullUrl,
+                contentType: req.headers['content-type'],
+                bodySize: body ? (body instanceof Buffer ? body.length : 0) : 0,
+                hasAuth: !!headers.Authorization
+            });
         }
         
         // Делаем запрос к бэкенду
@@ -107,6 +115,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             jsonData = data;
         }
         
+        // Логируем ошибки
+        if (response.status >= 400) {
+            console.error('Backend error:', {
+                status: response.status,
+                url: fullUrl,
+                method: req.method,
+                response: data.substring(0, 500) // Первые 500 символов
+            });
+        }
+        
         // Копируем статус и заголовки ответа
         res.status(response.status);
         
@@ -123,7 +141,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             res.send(jsonData);
         }
     } catch (error: any) {
-        console.error('Proxy error:', error);
+        console.error('Proxy error:', {
+            message: error.message,
+            stack: error.stack,
+            url: fullUrl,
+            method: req.method
+        });
         res.status(500).json({ 
             message: 'Proxy error', 
             error: error.message || 'Internal server error' 
