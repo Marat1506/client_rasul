@@ -3,9 +3,10 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 const BACKEND_URL = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3001';
 
 // Отключаем автоматический парсинг тела для Socket.IO
+// Socket.IO polling может отправлять данные в разных форматах
 export const config = {
     api: {
-        bodyParser: false,
+        bodyParser: false, // Отключаем парсинг, так как Socket.IO может отправлять данные в разных форматах
     },
 };
 
@@ -13,28 +14,21 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Убираем trailing slash из BACKEND_URL
     const backendURLFixed = BACKEND_URL.replace(/\/$/, '');
     
-    // Получаем путь из query параметров (если есть)
-    const { path } = req.query;
-    const pathString = Array.isArray(path) ? path.join('/') : path || '';
-    
     // Получаем query параметры из запроса
     const queryParams = new URLSearchParams();
     Object.keys(req.query).forEach((key) => {
-        if (key !== 'path') {
-            const value = req.query[key];
-            if (Array.isArray(value)) {
-                value.forEach((v) => queryParams.append(key, v));
-            } else if (value) {
-                queryParams.append(key, value as string);
-            }
+        const value = req.query[key];
+        if (Array.isArray(value)) {
+            value.forEach((v) => queryParams.append(key, v));
+        } else if (value) {
+            queryParams.append(key, value as string);
         }
     });
     
     // Формируем URL к бэкенду Socket.IO
-    // Если есть дополнительный путь, добавляем его
-    const socketPath = pathString ? `/socket.io/${pathString}` : '/socket.io';
+    // Socket.IO использует путь /socket.io/
     const queryString = queryParams.toString();
-    const url = `${backendURLFixed}${socketPath}${queryString ? `?${queryString}` : ''}`;
+    const url = `${backendURLFixed}/socket.io${queryString ? `?${queryString}` : ''}`;
     
     try {
         // Получаем заголовки из запроса

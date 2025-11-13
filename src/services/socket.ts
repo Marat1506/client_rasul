@@ -53,10 +53,12 @@ export const getSocket = (): Socket => {
     };
 
     // В продакшене указываем путь через прокси
-    // Socket.IO автоматически добавит /socket.io/ к базовому URL
+    // Socket.IO автоматически добавит /socket.io/ к указанному path
+    // Если path = "/api", то итоговый путь будет /api/socket.io/
     if (isProduction) {
-      // Используем относительный путь, Socket.IO добавит /socket.io/
-      socketOptions.path = "/api/socket.io";
+      // Socket.IO добавит /socket.io/ к этому path
+      // Если path = "/api", то итоговый путь будет /api/socket.io/
+      socketOptions.path = "/api";
     }
 
     socket = io(socketURL, socketOptions);
