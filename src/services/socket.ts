@@ -10,8 +10,8 @@ const isProduction = typeof window !== "undefined" && window.location.protocol =
 // В разработке используем прямой URL
 const getSocketURL = (): string => {
   if (isProduction) {
-    // В продакшене используем относительный путь (текущий домен)
-    // Socket.IO добавит /api/socket.io/ к этому URL
+    // В продакшене используем базовый URL (без пути)
+    // Socket.IO добавит /socket.io/ к указанному path
     return typeof window !== "undefined" ? window.location.origin : "";
   }
   
