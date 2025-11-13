@@ -2,13 +2,26 @@ import { io, Socket } from "socket.io-client";
 
 import { getCookie } from "@/hooks/cookies";
 
-// Получаем Socket URL из переменных окружения
-// Для WebSocket в продакшене используем тот же HTTP URL (WebSocket работает через ws:// или wss://)
-// Socket.IO автоматически обработает протокол
-const SOCKET_URL: string =
-  process.env.NEXT_PUBLIC_SOCKET_URL ||
-  process.env.NEXT_PUBLIC_BASE_URL ||
-  "http://localhost:3001";
+// Определяем, находимся ли мы в продакшене (HTTPS)
+const isProduction = typeof window !== "undefined" && window.location.protocol === "https:";
+
+// Получаем Socket URL
+// В продакшене используем относительный путь через прокси, чтобы избежать Mixed Content
+// В разработке используем прямой URL
+const getSocketURL = (): string => {
+  if (isProduction) {
+    // В продакшене используем относительный путь (текущий домен)
+    // Socket.IO добавит /api/socket.io/ к этому URL
+    return typeof window !== "undefined" ? window.location.origin : "";
+  }
+  
+  // В разработке используем прямой URL
+  return (
+    process.env.NEXT_PUBLIC_SOCKET_URL ||
+    process.env.NEXT_PUBLIC_BASE_URL ||
+    "http://localhost:3001"
+  );
+};
 
 let socket: Socket | null = null;
 
@@ -21,8 +34,15 @@ export const getSocket = (): Socket => {
       console.warn("⚠️ No token available for socket connection");
     }
 
-    socket = io(SOCKET_URL, {
-      transports: ["websocket", "polling"],
+    const socketURL = getSocketURL();
+    
+    // В продакшене используем только polling (HTTP/HTTPS), чтобы избежать Mixed Content
+    // В разработке используем websocket и polling
+    const transports = isProduction ? ["polling"] : ["websocket", "polling"];
+
+    // Настройки Socket.IO
+    const socketOptions: any = {
+      transports,
       autoConnect: false,
       auth: {
         token: token || undefined,
@@ -30,7 +50,16 @@ export const getSocket = (): Socket => {
       query: {
         token: token || undefined,
       },
-    });
+    };
+
+    // В продакшене указываем путь через прокси
+    // Socket.IO автоматически добавит /socket.io/ к базовому URL
+    if (isProduction) {
+      // Используем относительный путь, Socket.IO добавит /socket.io/
+      socketOptions.path = "/api/socket.io";
+    }
+
+    socket = io(socketURL, socketOptions);
 
     socket.on("connect", () => {
       console.log("✅ Connected to WebSocket");
@@ -53,7 +82,11 @@ export const getSocket = (): Socket => {
   // Update token if it changed (only on client side)
   if (typeof window !== "undefined") {
     const currentToken = getCookie("token");
-    if (currentToken && socket.auth?.token !== currentToken) {
+    const authToken = typeof socket.auth === "object" && socket.auth !== null && "token" in socket.auth 
+      ? (socket.auth as { token?: string }).token 
+      : undefined;
+    
+    if (currentToken && authToken !== currentToken) {
       socket.auth = { token: currentToken };
       socket.io.opts.query = { token: currentToken };
     }
