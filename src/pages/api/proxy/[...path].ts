@@ -48,8 +48,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         }
         
         // Копируем Content-Type заголовок (важно для multipart/form-data)
+        // Для multipart/form-data boundary критически важен
         if (req.headers['content-type']) {
-            headers['Content-Type'] = req.headers['content-type'] as string;
+            const contentType = req.headers['content-type'] as string;
+            headers['Content-Type'] = contentType;
+            
+            // Логируем Content-Type для отладки
+            if (contentType.includes('multipart/form-data')) {
+                console.log('Multipart Content-Type:', contentType);
+            }
         }
         
         // Копируем другие важные заголовки
@@ -99,7 +106,53 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             });
         }
         
-        // Делаем запрос к бэкенду
+        // Для multipart/form-data используем http модуль напрямую
+        // fetch API не правильно обрабатывает Buffer для multipart/form-data
+        if (req.headers['content-type']?.includes('multipart/form-data') && body instanceof Buffer) {
+            const http = require('http');
+            const url = require('url');
+            const backendUrl = new URL(fullUrl);
+            
+            return new Promise((resolve, reject) => {
+                const options = {
+                    hostname: backendUrl.hostname,
+                    port: backendUrl.port || (backendUrl.protocol === 'https:' ? 443 : 80),
+                    path: backendUrl.pathname + (backendUrl.search || ''),
+                    method: req.method,
+                    headers: {
+                        ...headers,
+                        'Content-Length': body.length,
+                    },
+                };
+                
+                const proxyReq = http.request(options, (proxyRes: any) => {
+                    // Копируем статус
+                    res.status(proxyRes.statusCode || 500);
+                    
+                    // Копируем заголовки
+                    Object.keys(proxyRes.headers).forEach((key) => {
+                        if (key !== 'content-encoding' && key !== 'transfer-encoding') {
+                            res.setHeader(key, proxyRes.headers[key]);
+                        }
+                    });
+                    
+                    // Проксируем тело ответа
+                    proxyRes.pipe(res);
+                    proxyRes.on('end', () => resolve(undefined));
+                });
+                
+                proxyReq.on('error', (error: Error) => {
+                    console.error('Proxy request error:', error);
+                    reject(error);
+                });
+                
+                // Отправляем тело запроса
+                proxyReq.write(body);
+                proxyReq.end();
+            });
+        }
+        
+        // Для остальных типов используем fetch
         const response = await fetch(fullUrl, {
             method: req.method,
             headers,
