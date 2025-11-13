@@ -111,19 +111,31 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         if (req.headers['content-type']?.includes('multipart/form-data') && body instanceof Buffer) {
             const http = require('http');
             const url = require('url');
-            const backendUrl = new URL(fullUrl);
+            
+            // Парсим URL
+            const backendUrl = url.parse(fullUrl);
             
             return new Promise((resolve, reject) => {
                 const options = {
                     hostname: backendUrl.hostname,
-                    port: backendUrl.port || (backendUrl.protocol === 'https:' ? 443 : 80),
-                    path: backendUrl.pathname + (backendUrl.search || ''),
+                    port: backendUrl.port || 80,
+                    path: backendUrl.path,
                     method: req.method,
                     headers: {
                         ...headers,
                         'Content-Length': body.length,
+                        'Host': backendUrl.hostname,
                     },
                 };
+                
+                console.log('HTTP request options:', {
+                    hostname: options.hostname,
+                    port: options.port,
+                    path: options.path,
+                    method: options.method,
+                    contentType: headers['Content-Type'],
+                    contentLength: body.length,
+                });
                 
                 const proxyReq = http.request(options, (proxyRes: any) => {
                     // Копируем статус
@@ -136,13 +148,44 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                         }
                     });
                     
+                    // Логируем ответ
+                    if (proxyRes.statusCode && proxyRes.statusCode >= 400) {
+                        console.error('Backend HTTP error:', {
+                            status: proxyRes.statusCode,
+                            url: fullUrl,
+                            method: req.method,
+                            headers: proxyRes.headers,
+                        });
+                    }
+                    
                     // Проксируем тело ответа
-                    proxyRes.pipe(res);
-                    proxyRes.on('end', () => resolve(undefined));
+                    proxyRes.on('data', (chunk: Buffer) => {
+                        res.write(chunk);
+                    });
+                    
+                    proxyRes.on('end', () => {
+                        res.end();
+                        resolve(undefined);
+                    });
+                    
+                    proxyRes.on('error', (error: Error) => {
+                        console.error('Proxy response error:', error);
+                        reject(error);
+                    });
                 });
                 
                 proxyReq.on('error', (error: Error) => {
-                    console.error('Proxy request error:', error);
+                    console.error('Proxy request error:', {
+                        message: error.message,
+                        stack: error.stack,
+                        url: fullUrl,
+                    });
+                    if (!res.headersSent) {
+                        res.status(500).json({ 
+                            message: 'Proxy request error', 
+                            error: error.message 
+                        });
+                    }
                     reject(error);
                 });
                 
