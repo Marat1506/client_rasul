@@ -39,7 +39,10 @@ const SubmitRequest = () => {
               item
               xs={12}
               md={5}
-              sx={{ display: 'flex', flexDirection: 'column' }}
+              sx={{ 
+                display: { xs: 'none', md: 'flex' },
+                flexDirection: 'column' 
+              }}
             >
               <Manager />
             </Grid>
